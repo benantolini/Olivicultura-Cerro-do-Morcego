@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>🫒 Olivicultura — Cerro do Morcego</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0d0d07;--bg2:#171710;--bg3:#21200f;--bd:#272714;--gold:#C9A84C;--g2:#8B6914;--g3:#3a3008;--teal:#4ecdc4;--blue:#64b5f6;--green:#8bc34a;--orange:#ff9f43;--red:#ef5350;--txt:#ddd5bb;--mut:#5a5a40}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font-family:'Segoe UI',system-ui,sans-serif;min-height:100vh;font-size:13px}
+/* HEADER */
+.hdr{background:linear-gradient(135deg,var(--bg2),#201e08,var(--bg2));border-bottom:2px solid var(--g2);padding:18px 28px;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px}
+.hdr-badge{font-size:9px;color:var(--g2);letter-spacing:3px;text-transform:uppercase;margin-bottom:5px}
+.hdr h1{font-family:Georgia,serif;font-size:21px;color:var(--gold);font-weight:700}
+.hdr-sub{font-size:11px;color:var(--mut);margin-top:3px}
+.hdr-pay{text-align:right}.hdr-pay-lbl{font-size:9px;color:var(--g2);letter-spacing:2px}
+.hdr-pay-val{font-size:24px;font-weight:800;color:var(--gold);font-family:Georgia,serif}
+.hdr-pay-sub{font-size:10px;color:var(--mut)}
+/* KPIs */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:9px;padding:14px 28px 0}
+.kpi{background:rgba(255,255,255,.04);border:1px solid var(--bd);border-radius:8px;padding:13px 15px}
+.kpi.hl{background:linear-gradient(135deg,var(--g2),var(--gold));border:none}
+.kpi-lbl{font-size:9px;color:var(--mut);letter-spacing:1.8px;text-transform:uppercase;margin-bottom:3px}
+.kpi.hl .kpi-lbl{color:#3a2800}
+.kpi-val{font-family:Georgia,serif;font-size:19px;font-weight:800;color:var(--gold)}
+.kpi.hl .kpi-val{color:#1a0e00}
+.kpi-sub{font-size:10px;color:var(--mut);margin-top:2px}
+.kpi.hl .kpi-sub{color:#4a3000}
+/* BUTTONS */
+.actions{padding:12px 28px 0;display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:rgba(255,255,255,.05);border:1px solid var(--g2);border-radius:5px;color:var(--gold);padding:7px 18px;font-size:11.5px;font-weight:700;cursor:pointer;transition:all .15s}
+.btn:hover,.btn.on{background:var(--g2);color:#0d0d07}
+/* CFG PANEL */
+.cfg{padding:12px 28px;display:none;grid-template-columns:repeat(auto-fit,minmax(272px,1fr));gap:10px}
+.cfg.open{display:grid}
+.sec{background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.04);border-radius:6px;overflow:hidden}
+.sec-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 13px;cursor:pointer}
+.sec-ttl{font-size:10.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase}
+.sec-ico{font-size:9px;color:var(--mut)}
+.sec-body{padding:2px 13px 13px;display:none}
+.sec-body.open{display:block}
+/* SLIDERS */
+.sl-row{margin-bottom:11px}
+.sl-lbl{display:flex;justify-content:space-between;font-size:11px;color:#aaa;margin-bottom:2px}
+.sl-val{color:var(--gold);font-weight:700}
+input[type=range]{width:100%;accent-color:var(--gold);cursor:pointer;height:3px;margin-top:2px}
+/* STEPPERS */
+.st-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.st-lbl{font-size:11px;color:#aaa;flex:1}
+.st-ctrl{display:flex;align-items:center;gap:7px}
+.st-btn{background:var(--bd);border:none;color:#bbb;width:24px;height:24px;border-radius:4px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.st-btn:hover{background:var(--g2);color:#0d0d07}
+.st-val{color:var(--gold);font-weight:700;font-size:13px;min-width:52px;text-align:center}
+.sub-line{border-top:1px solid var(--bd);padding-top:6px;display:flex;justify-content:space-between;font-size:12px;color:var(--gold);margin-top:3px;font-weight:600}
+/* TABS */
+.tabs{padding:13px 28px 0;border-bottom:1px solid var(--bd);display:flex;gap:3px;overflow-x:auto}
+.tab-btn{background:transparent;border:none;color:var(--mut);padding:8px 14px;font-size:11.5px;font-weight:400;cursor:pointer;border-radius:4px 4px 0 0;white-space:nowrap;transition:all .15s}
+.tab-btn.on{background:var(--g2);color:#0d0d07;font-weight:700}
+/* TAB CONTENT */
+.tc{padding:15px 28px 40px;display:none}
+.tc.on{display:block}
+.chart-box{background:rgba(255,255,255,.02);border:1px solid var(--bd);border-radius:8px;padding:14px;margin-bottom:18px}
+.chart-ttl{font-size:9px;color:var(--g2);letter-spacing:2px;text-transform:uppercase;margin-bottom:10px}
+canvas{max-height:280px}
+/* COST CARDS */
+.card-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:9px;margin-top:14px}
+.card{background:rgba(255,255,255,.03);border-radius:6px;padding:13px}
+.card-ttl{font-size:11px;font-weight:700;margin-bottom:9px}
+.card-row{display:flex;justify-content:space-between;font-size:11px;margin-bottom:5px;gap:6px}
+.card-lbl{color:#aaa;flex:1}
+.card-val{color:#ddd;font-weight:600}
+.card-tot{border-top:1px solid var(--bd);padding-top:5px;display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;margin-top:3px}
+/* RAMP TABLE */
+.ramp{display:grid;grid-template-columns:repeat(auto-fit,minmax(60px,1fr));gap:5px;margin-top:12px}
+.ramp-cell{text-align:center;border:1px solid var(--bd);border-radius:5px;padding:7px 2px}
+.ramp-yr{font-size:9px;color:var(--mut)}
+.ramp-val{font-size:13px;font-weight:700;margin:1px 0}
+.ramp-unit{font-size:8px;color:#555}
+/* LAGAR ANALYSIS */
+.be-box{background:rgba(255,255,255,.03);border:1px solid rgba(139,195,74,.2);border-radius:6px;padding:13px;margin-top:14px}
+.be-ttl{font-size:9px;color:var(--green);letter-spacing:2px;font-weight:700;margin-bottom:10px;text-transform:uppercase}
+.be-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
+.be-item-lbl{font-size:10px;color:var(--mut);margin-bottom:2px}
+.be-item-val{font-size:15px;font-weight:700}
+.be-note{font-size:9px;color:#444;margin-top:8px}
+/* TABLE */
+.tbl-wrap{overflow-x:auto;max-height:68vh;overflow-y:auto;border:1px solid var(--bd);border-radius:6px}
+table{width:100%;border-collapse:collapse;font-size:10.5px}
+thead{position:sticky;top:0;z-index:10}
+th{padding:8px 9px;background:#121208;color:var(--g2);font-weight:600;text-align:right;white-space:nowrap;border-bottom:2px solid var(--g2)}
+td{padding:5px 9px;text-align:right;border-bottom:1px solid var(--bd)}
+tr:nth-child(even) td{background:rgba(255,255,255,.012)}
+tr.lagar td{background:rgba(100,181,246,.08)}
+/* REF BOX */
+.ref-box{background:rgba(255,255,255,.02);border:1px solid var(--bd);border-left:3px solid var(--g2);border-radius:5px;padding:12px 15px;margin-top:14px;font-size:11px;color:var(--mut);line-height:1.75}
+.ref-box strong{color:var(--gold)}
+/* FOOTER */
+.footer{background:var(--bg2);border-top:1px solid var(--bd);padding:10px 28px;font-size:10px;color:#3a3a28;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr">
+  <div>
+    <div class="hdr-badge">🫒 Cerro do Morcego &nbsp;·&nbsp; Missões / RS &nbsp;·&nbsp; v2025</div>
+    <h1>Olivicultura — Modelo de Negócio</h1>
+    <p class="hdr-sub" id="hdr-sub">Carregando...</p>
+  </div>
+  <div class="hdr-pay">
+    <div class="hdr-pay-lbl">PAYBACK — LAGAR 3°</div>
+    <div class="hdr-pay-val" id="hdr-be-a">—</div>
+    <div class="hdr-pay-sub" id="hdr-be-a-sub">—</div>
+  </div>
+</header>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi"><div class="kpi-lbl">Área Final</div><div class="kpi-val" id="k-area">—</div><div class="kpi-sub" id="k-area-s">—</div></div>
+  <div class="kpi"><div class="kpi-lbl">Implantação Total</div><div class="kpi-val" id="k-inv">—</div><div class="kpi-sub">ao longo do projeto</div></div>
+  <div class="kpi hl"><div class="kpi-lbl">Payback 3°</div><div class="kpi-val" id="k-be-a">—</div><div class="kpi-sub" id="k-be-as">—</div></div>
+  <div class="kpi"><div class="kpi-lbl">Payback Próprio</div><div class="kpi-val" id="k-be-b">—</div><div class="kpi-sub" id="k-be-bs">—</div></div>
+  <div class="kpi"><div class="kpi-lbl">Receita de Pico</div><div class="kpi-val" id="k-rev">—</div><div class="kpi-sub" id="k-prod">—</div></div>
+</div>
+
+<!-- ACTIONS -->
+<div class="actions">
+  <button class="btn" id="btn-cfg" onclick="toggleCfg()">⚙&nbsp; Editar Premissas</button>
+  <button class="btn" onclick="resetDef()">↺&nbsp; Restaurar Padrões</button>
+  <button class="btn" onclick="exportCSV()">⬇&nbsp; Exportar CSV</button>
+</div>
+
+<!-- CFG PANEL -->
+<div class="cfg" id="cfg">
+
+  <!-- PLANTIO -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #8bc34a">
+      <span class="sec-ttl" style="color:#8bc34a">🌱 Escala de Plantio</span><span class="sec-ico">▼</span>
+    </div>
+    <div class="sec-body open">
+      <div class="st-row"><span class="st-lbl">Lote inicial (ha)</span><div class="st-ctrl"><button class="st-btn" data-key="initialBatch" data-dir="-1" data-step="1" data-min="1" data-max="200">−</button><span class="st-val" id="sv-initialBatch">10 ha</span><button class="st-btn" data-key="initialBatch" data-dir="1" data-step="1" data-min="1" data-max="200">+</button></div></div>
+      <div class="st-row"><span class="st-lbl">Incremento anual (ha/ano)</span><div class="st-ctrl"><button class="st-btn" data-key="annualIncrement" data-dir="-1" data-step="1" data-min="0" data-max="50">−</button><span class="st-val" id="sv-annualIncrement">5 ha/ano</span><button class="st-btn" data-key="annualIncrement" data-dir="1" data-step="1" data-min="0" data-max="50">+</button></div></div>
+      <div class="st-row"><span class="st-lbl">Por quantos anos</span><div class="st-ctrl"><button class="st-btn" data-key="incrementYears" data-dir="-1" data-step="1" data-min="0" data-max="30">−</button><span class="st-val" id="sv-incrementYears">9 anos</span><button class="st-btn" data-key="incrementYears" data-dir="1" data-step="1" data-min="0" data-max="30">+</button></div></div>
+      <div class="st-row"><span class="st-lbl">Ano de início</span><div class="st-ctrl"><button class="st-btn" data-key="startYear" data-dir="-1" data-step="1" data-min="2020" data-max="2035">−</button><span class="st-val" id="sv-startYear">2025</span><button class="st-btn" data-key="startYear" data-dir="1" data-step="1" data-min="2020" data-max="2035">+</button></div></div>
+      <div style="font-size:11px;color:#8bc34a;margin-top:4px">Área total: <span id="inf-area-total">55</span> ha em <span id="inf-nlotes">10</span> lotes</div>
+    </div>
+  </div>
+
+  <!-- IMPLANTAÇÃO -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #4ecdc4">
+      <span class="sec-ttl" style="color:#4ecdc4">🏗️ Implantação (R$/ha)</span><span class="sec-ico">▼</span>
+    </div>
+    <div class="sec-body open">
+      <div class="sl-row"><div class="sl-lbl"><span>Preparo solo + calagem + adubação cova</span><span class="sl-val" id="sv-implSoilPrep">R$5.500</span></div><input type="range" data-key="implSoilPrep" min="2000" max="12000" step="500" value="5500"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Mudas (~357 plantas/ha · ref. R$22/muda)</span><span class="sl-val" id="sv-implSeedlings">R$8.000</span></div><input type="range" data-key="implSeedlings" min="3000" max="18000" step="500" value="8000"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Irrigação de apoio (gotejamento localizado)</span><span class="sl-val" id="sv-implIrrigation">R$7.000</span></div><input type="range" data-key="implIrrigation" min="0" max="20000" step="500" value="7000"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Infraestrutura (estradas, cercas)</span><span class="sl-val" id="sv-implInfra">R$4.000</span></div><input type="range" data-key="implInfra" min="500" max="10000" step="500" value="4000"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Mão de obra de plantio</span><span class="sl-val" id="sv-implLabor">R$2.500</span></div><input type="range" data-key="implLabor" min="500" max="6000" step="250" value="2500"></div>
+      <div class="sub-line"><span>TOTAL /ha</span><span id="sub-impl">R$27.000</span></div>
+      <div class="ref-box" style="margin-top:8px">
+        <strong>Ref. 2025 (pesquisa de mercado):</strong><br>
+        Faixa de mercado: R$18–30k/ha · Pomar básico: R$18k · Pomar bem implantado (Olivas do Sul): R$23k · Com gotejamento completo: R$25–30k
+      </div>
+    </div>
+  </div>
+
+  <!-- PRÉ-PRODUÇÃO -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #ff9f43">
+      <span class="sec-ttl" style="color:#ff9f43">🌿 Manutenção Pré-Produção (R$/ha/ano)</span><span class="sec-ico">▼</span>
+    </div>
+    <div class="sec-body open">
+      <div class="sl-row"><div class="sl-lbl"><span>Insumos (adubação, fitossanitário, podas)</span><span class="sl-val" id="sv-preInputs">R$2.500</span></div><input type="range" data-key="preInputs" min="1000" max="6000" step="250" value="2500"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Mão de obra (roçadas, monitoramento)</span><span class="sl-val" id="sv-preLabor">R$2.000</span></div><input type="range" data-key="preLabor" min="500" max="5000" step="250" value="2000"></div>
+      <div class="sub-line"><span>TOTAL /ha/ano (anos 1–3)</span><span id="sub-pre">R$4.500</span></div>
+    </div>
+  </div>
+
+  <!-- OPERAÇÃO POMAR -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #C9A84C">
+      <span class="sec-ttl" style="color:#C9A84C">🫒 Operação do Pomar (R$/ha/ano)</span><span class="sec-ico">▼</span>
+    </div>
+    <div class="sec-body open">
+      <div class="sl-row"><div class="sl-lbl"><span>Insumos pós-produção (adubação, fito)</span><span class="sl-val" id="sv-postInputs">R$4.000</span></div><input type="range" data-key="postInputs" min="1500" max="9000" step="250" value="4000"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Colheita (manual / mecanizada)</span><span class="sl-val" id="sv-postHarvest">R$4.000</span></div><input type="range" data-key="postHarvest" min="1500" max="10000" step="250" value="4000"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Mão de obra pós-produção</span><span class="sl-val" id="sv-postLabor">R$3.000</span></div><input type="range" data-key="postLabor" min="1000" max="7000" step="250" value="3000"></div>
+      <div class="sub-line"><span>TOTAL /ha/ano (a partir do ano 4)</span><span id="sub-post">R$11.000</span></div>
+    </div>
+  </div>
+
+  <!-- LAGAR 3° -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #ef5350">
+      <span class="sec-ttl" style="color:#ef5350">🚛 Lagar Terceirizado</span><span class="sec-ico">▼</span>
+    </div>
+    <div class="sec-body open">
+      <div class="sl-row"><div class="sl-lbl"><span>Custo processamento (R$/kg azeitona)</span><span class="sl-val" id="sv-thirdRate">R$4,0/kg</span></div><input type="range" data-key="thirdRate" min="1" max="10" step="0.5" value="4"></div>
+      <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.7">
+        Equivalente: R$<span id="inf-third-l">40</span>/L produzido &nbsp;·&nbsp; Faixa mercado: R$3–6/kg<br>
+        Referência RS: R$3,5–4,5/kg (lagares credenciados SEAPI)
+      </div>
+    </div>
+  </div>
+
+  <!-- LAGAR PRÓPRIO -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #64b5f6">
+      <span class="sec-ttl" style="color:#64b5f6">🏭 Lagar Próprio</span><span class="sec-ico">▼</span>
+    </div>
+    <div class="sec-body open">
+      <div class="st-row"><span class="st-lbl">Ano de implantação (do projeto)</span><div class="st-ctrl"><button class="st-btn" data-key="lagarYear" data-dir="-1" data-step="1" data-min="2" data-max="25">−</button><span class="st-val" id="sv-lagarYear">8° ano</span><button class="st-btn" data-key="lagarYear" data-dir="1" data-step="1" data-min="2" data-max="25">+</button></div></div>
+      <div style="font-size:10px;color:var(--mut);margin:-4px 0 8px">= <span id="inf-lagar-cal">2032</span> &nbsp;·&nbsp; Produção prevista: <span id="inf-lagar-prod">—</span></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Investimento no lagar</span><span class="sl-val" id="sv-lagarInvestment">R$450k</span></div><input type="range" data-key="lagarInvestment" min="100000" max="2000000" step="25000" value="450000"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Custo fixo anual (equipe, energia, manutenção)</span><span class="sl-val" id="sv-lagarFixed">R$65k</span></div><input type="range" data-key="lagarFixed" min="20000" max="300000" step="5000" value="65000"></div>
+      <div class="sl-row"><div class="sl-lbl"><span>Custo variável (embalagem, rotulagem)</span><span class="sl-val" id="sv-lagarVariable">R$5/L</span></div><input type="range" data-key="lagarVariable" min="1" max="30" step="1" value="5"></div>
+    </div>
+  </div>
+
+  <!-- MERCADO -->
+  <div class="sec">
+    <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #8bc34a">
+      <span class="sec-ttl" style="color:#8bc34a">📊 Mercado</span><span class="sec-ico">▼</span>
+    </div>
+    <div class="sec-body open">
+      <div class="sl-row"><div class="sl-lbl"><span>Preço do azeite extravirgem (R$/L)</span><span class="sl-val" id="sv-priceL">R$120/L</span></div><input type="range" data-key="priceL" min="60" max="250" step="5" value="120"></div>
+      <div style="font-size:11px;color:var(--mut);margin-top:4px;line-height:1.75">
+        Premium nacional (Selo RS): R$140–240/L &nbsp;·&nbsp; Commoditizado: R$80–120/L<br>
+        Importado (concorrência direta): R$40–70/L
+      </div>
+    </div>
+  </div>
+
+</div><!-- /cfg -->
+
+<!-- TABS -->
+<div class="tabs">
+  <button class="tab-btn on" onclick="showTab('fluxo',this)">📈 Fluxo de Caixa</button>
+  <button class="tab-btn" onclick="showTab('custos',this)">💰 Custos Detalhados</button>
+  <button class="tab-btn" onclick="showTab('producao',this)">🫒 Produção</button>
+  <button class="tab-btn" onclick="showTab('lagar',this)">🏭 Comparativo Lagar</button>
+  <button class="tab-btn" onclick="showTab('tabela',this)">📋 Tabela Completa</button>
+</div>
+
+<!-- TAB: FLUXO -->
+<div class="tc on" id="tc-fluxo">
+  <div class="chart-box"><div class="chart-ttl">RECEITA vs CUSTOS ANUAIS (R$) — Cenário Lagar Terceirizado</div><canvas id="c-fluxo"></canvas></div>
+  <div class="chart-box"><div class="chart-ttl">FLUXO DE CAIXA ACUMULADO (R$) — Comparativo de Cenários</div><canvas id="c-acum"></canvas></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:4px">
+    <div style="background:rgba(78,205,196,.08);border:1px solid rgba(78,205,196,.3);border-left:3px solid #4ecdc4;border-radius:6px;padding:12px 14px">
+      <div style="font-size:9px;color:var(--mut);margin-bottom:3px">PAYBACK — LAGAR TERCEIRIZADO</div>
+      <div style="font-size:17px;font-weight:700;color:#4ecdc4" id="fl-be-a">—</div>
+    </div>
+    <div style="background:rgba(100,181,246,.08);border:1px solid rgba(100,181,246,.3);border-left:3px solid #64b5f6;border-radius:6px;padding:12px 14px">
+      <div style="font-size:9px;color:var(--mut);margin-bottom:3px">PAYBACK — LAGAR PRÓPRIO</div>
+      <div style="font-size:17px;font-weight:700;color:#64b5f6" id="fl-be-b">—</div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB: CUSTOS -->
+<div class="tc" id="tc-custos">
+  <div class="chart-box"><div class="chart-ttl">COMPOSIÇÃO DOS CUSTOS ANUAIS — CATEGORIAS EMPILHADAS</div><canvas id="c-custo"></canvas></div>
+  <div class="chart-ttl" style="margin-top:6px">DETALHAMENTO POR CATEGORIA (R$/ha)</div>
+  <div class="card-grid" id="cost-cards"></div>
+</div>
+
+<!-- TAB: PRODUÇÃO -->
+<div class="tc" id="tc-producao">
+  <div class="chart-box"><div class="chart-ttl">ÁREA PLANTADA vs EM PRODUÇÃO (ha)</div><canvas id="c-area"></canvas></div>
+  <div class="chart-box"><div class="chart-ttl">PRODUÇÃO DE AZEITE (litros/ano)</div><canvas id="c-prod"></canvas></div>
+  <div class="chart-ttl" style="margin-top:2px">CURVA DE PRODUTIVIDADE POR LOTE (L/ha por idade)</div>
+  <div class="ramp" id="ramp-cells"></div>
+</div>
+
+<!-- TAB: LAGAR -->
+<div class="tc" id="tc-lagar">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px">
+    <div style="background:rgba(255,255,255,.03);border-top:2px solid #4ecdc4;border:1px solid rgba(78,205,196,.2);border-radius:6px;padding:13px">
+      <div style="font-size:11px;color:#4ecdc4;font-weight:700;margin-bottom:8px">🚛 LAGAR TERCEIRIZADO</div>
+      <div id="lagar-a-info" style="font-size:11px;color:#aaa;line-height:1.8"></div>
+    </div>
+    <div style="background:rgba(255,255,255,.03);border-top:2px solid #64b5f6;border:1px solid rgba(100,181,246,.2);border-radius:6px;padding:13px">
+      <div style="font-size:11px;color:#64b5f6;font-weight:700;margin-bottom:8px">🏭 LAGAR PRÓPRIO</div>
+      <div id="lagar-b-info" style="font-size:11px;color:#aaa;line-height:1.8"></div>
+    </div>
+  </div>
+  <div class="chart-box"><div class="chart-ttl">CUSTO DE PROCESSAMENTO ANUAL (R$)</div><canvas id="c-lbar"></canvas></div>
+  <div class="chart-box"><div class="chart-ttl">VANTAGEM ACUMULADA DO LAGAR PRÓPRIO vs TERCEIRIZADO (positivo = próprio melhor)</div><canvas id="c-ldelta"></canvas></div>
+  <div class="be-box">
+    <div class="be-ttl">ANÁLISE DE BREAK-EVEN DO LAGAR PRÓPRIO</div>
+    <div class="be-grid" id="be-grid"></div>
+    <div class="be-note">* Economia anual estimada no ano de implantação. Aumenta progressivamente com a expansão da produção.</div>
+  </div>
+</div>
+
+<!-- TAB: TABELA -->
+<div class="tc" id="tc-tabela">
+  <div class="tbl-wrap">
+    <table>
+      <thead><tr>
+        <th style="text-align:left">Ano</th><th>Cal.</th><th>Ha+</th><th>Ha Tot</th><th>Ha Prod</th>
+        <th>Implant.</th><th>Manut.Pré</th><th>Op.Pomar</th>
+        <th>Proc.3°</th><th>Proc.Próp.</th>
+        <th>Receita</th><th>Fluxo 3°</th><th>Fluxo Próp.</th>
+        <th>Acum. 3°</th><th>Acum. Próp.</th>
+      </tr></thead>
+      <tbody id="tbl-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<div class="footer">Olivicultura — Cerro do Morcego · Missões/RS &nbsp;|&nbsp; Modelo financeiro v2025 com referências Embrapa/SEAPI · Dados estimados para planejamento — consulte técnico habilitado para projeto agronômico oficial</div>
+
+<script>
+// ─── ENGINE ─────────────────────────────────────────────────────────────────
+const KG_PER_L = 10;
+const PROD_RAMP = [0,0,0,400,750,1050,1300,1450,1550,1600,1700];
+
+let P = {
+  startYear:2025, initialBatch:10, annualIncrement:5, incrementYears:9,
+  implSoilPrep:5500, implSeedlings:8000, implIrrigation:7000, implInfra:4000, implLabor:2500,
+  preInputs:2500, preLabor:2000,
+  postInputs:4000, postHarvest:4000, postLabor:3000,
+  thirdRate:4.0,
+  lagarYear:8, lagarInvestment:450000, lagarFixed:65000, lagarVariable:5,
+  priceL:120
+};
+const DEF = JSON.parse(JSON.stringify(P));
+
+function computeModel(p) {
+  const implHa = p.implSoilPrep+p.implSeedlings+p.implIrrigation+p.implInfra+p.implLabor;
+  const preHa = p.preInputs+p.preLabor;
+  const pomHa = p.postInputs+p.postHarvest+p.postLabor;
+  const sched = [{yr:1,ha:p.initialBatch}];
+  if(p.annualIncrement>0) for(let i=1;i<=p.incrementYears;i++) sched.push({yr:i+1,ha:p.annualIncrement});
+  const lastYr = sched[sched.length-1].yr;
+  const TOTAL = Math.max(20,lastYr+13);
+  const rows=[];let cumA=0,cumB=0;
+  for(let yr=1;yr<=TOTAL;yr++){
+    const cal=p.startYear+yr-1;
+    const newHa=(sched.find(b=>b.yr===yr)||{ha:0}).ha;
+    const imp=newHa*implHa;
+    let pre=0,pom=0,prodL=0,prodHa=0,totHa=0;
+    sched.forEach(b=>{
+      if(b.yr>yr)return;
+      const age=yr-b.yr;
+      totHa+=b.ha;
+      const pr=PROD_RAMP[Math.min(age,PROD_RAMP.length-1)]||0;
+      if(pr>0){pom+=b.ha*pomHa;prodL+=b.ha*pr;prodHa+=b.ha;}
+      else pre+=b.ha*preHa;
+    });
+    const kg=prodL*KG_PER_L, rev=prodL*p.priceL;
+    const pA=kg*p.thirdRate, tA=imp+pre+pom+pA, nA=rev-tA; cumA+=nA;
+    let linvB=0,pB=0;
+    if(yr<p.lagarYear) pB=kg*p.thirdRate;
+    else{if(yr===p.lagarYear)linvB=p.lagarInvestment;pB=prodL>0?p.lagarFixed+prodL*p.lagarVariable:0;}
+    const tB=imp+pre+pom+pB+linvB, nB=rev-tB; cumB+=nB;
+    rows.push({yr,cal,newHa,totHa,prodHa,imp:Math.round(imp),pre:Math.round(pre),pom:Math.round(pom),
+      prodL:Math.round(prodL),kg:Math.round(kg),rev:Math.round(rev),
+      pA:Math.round(pA),tA:Math.round(tA),nA:Math.round(nA),cumA:Math.round(cumA),
+      linvB:Math.round(linvB),pB:Math.round(pB),tB:Math.round(tB),nB:Math.round(nB),cumB:Math.round(cumB),
+      delta:Math.round(cumB-cumA)});
+  }
+  const beA=rows.find(r=>r.cumA>=0)||null;
+  const beB=rows.find(r=>r.cumB>=0)||null;
+  const lbe=rows.find(r=>r.yr>=p.lagarYear&&r.delta>=0)||null;
+  const totHaF=sched.reduce((s,b)=>s+b.ha,0);
+  const totInv=sched.reduce((s,b)=>s+b.ha*implHa,0);
+  const peakRev=Math.max(...rows.map(r=>r.rev));
+  const peakProd=Math.max(...rows.map(r=>r.prodL));
+  const rL=rows.find(r=>r.yr===p.lagarYear)||null;
+  const anSav=rL?rL.pA-rL.pB:0;
+  const yRec=anSav>0?Math.ceil(p.lagarInvestment/anSav):null;
+  return{rows,beA,beB,lbe,totHaF,totInv,peakRev,peakProd,implHa,preHa,pomHa,sched,anSav,yRec,rL};
+}
+
+// ─── FORMATTERS ──────────────────────────────────────────────────────────────
+const fC=v=>{if(v===null||v===undefined)return'—';const a=Math.abs(v);if(a>=1e6)return'R$'+(v/1e6).toFixed(1)+'M';if(a>=1e3)return'R$'+(v/1e3).toFixed(0)+'k';return'R$'+Math.round(v);};
+const fF=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v);
+const $=(id)=>document.getElementById(id);
+const set=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
+
+// ─── CHARTS ──────────────────────────────────────────────────────────────────
+const charts={};
+const grd='#272714';
+const chartBase=(id)=>({responsive:true,maintainAspectRatio:true,aspectRatio:3,plugins:{
+  legend:{labels:{color:'#7a7a5a',font:{size:10},boxWidth:11,padding:10}},
+  tooltip:{backgroundColor:'#171710',borderColor:'#8B6914',borderWidth:1,
+    titleColor:'#C9A84C',bodyColor:'#ddd5bb',padding:8,
+    callbacks:{label:c=>` ${c.dataset.label}: ${fC(c.raw)}`}}},
+  scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},
+           y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>fC(v)},grid:{color:grd}}}});
+
+function initCharts(){
+  Chart.defaults.color='#7a7a5a';
+
+  charts.fluxo=new Chart($('c-fluxo'),{type:'bar',data:{labels:[],datasets:[
+    {label:'Receita',data:[],backgroundColor:'rgba(201,168,76,.85)',stack:'r',order:2},
+    {label:'Implantação',data:[],backgroundColor:'rgba(74,46,30,.9)',stack:'c',order:2},
+    {label:'Manut.Pré',data:[],backgroundColor:'rgba(255,159,67,.75)',stack:'c',order:2},
+    {label:'Op.Pomar',data:[],backgroundColor:'rgba(139,105,20,.8)',stack:'c',order:2},
+    {label:'Proc.3°',data:[],backgroundColor:'rgba(239,83,80,.7)',stack:'c',order:2},
+    {type:'line',label:'Fluxo 3°',data:[],borderColor:'#4ecdc4',borderWidth:2,pointRadius:0,tension:.3,fill:false,order:1},
+    {type:'line',label:'Fluxo Próprio',data:[],borderColor:'#64b5f6',borderWidth:2,pointRadius:0,tension:.3,borderDash:[5,3],fill:false,order:1},
+  ]},options:chartBase('c-fluxo')});
+
+  charts.acum=new Chart($('c-acum'),{type:'line',data:{labels:[],datasets:[
+    {label:'Acum. Lagar 3°',data:[],borderColor:'#4ecdc4',borderWidth:2.5,pointRadius:0,tension:.3,fill:false},
+    {label:'Acum. Lagar Próprio',data:[],borderColor:'#64b5f6',borderWidth:2.5,pointRadius:0,tension:.3,borderDash:[5,3],fill:false},
+    {label:'Break-even',data:[],borderColor:'rgba(139,105,20,.5)',borderWidth:1,borderDash:[4,2],pointRadius:0,fill:false},
+  ]},options:chartBase('c-acum')});
+
+  charts.custo=new Chart($('c-custo'),{type:'bar',data:{labels:[],datasets:[
+    {label:'Implantação',data:[],backgroundColor:'rgba(74,46,30,.9)'},
+    {label:'Manutenção Pré',data:[],backgroundColor:'rgba(255,159,67,.8)'},
+    {label:'Operação Pomar',data:[],backgroundColor:'rgba(139,105,20,.8)'},
+    {label:'Processamento 3°',data:[],backgroundColor:'rgba(239,83,80,.75)'},
+  ]},options:{...chartBase('c-custo'),scales:{x:{stacked:true,ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{stacked:true,ticks:{color:'#4a4a30',font:{size:10},callback:v=>fC(v)},grid:{color:grd}}}}});
+
+  charts.area=new Chart($('c-area'),{type:'line',data:{labels:[],datasets:[
+    {label:'Total Plantada',data:[],fill:true,backgroundColor:'rgba(42,42,20,.8)',borderColor:'#3a3a20',borderWidth:1,pointRadius:0},
+    {label:'Em Produção',data:[],fill:true,backgroundColor:'rgba(139,105,20,.45)',borderColor:'#C9A84C',borderWidth:2,pointRadius:0},
+  ]},options:{...chartBase('c-area'),scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>v+' ha'},grid:{color:grd}}}}});
+
+  charts.prod=new Chart($('c-prod'),{type:'line',data:{labels:[],datasets:[
+    {label:'Litros de Azeite',data:[],fill:true,backgroundColor:'rgba(78,205,196,.1)',borderColor:'#4ecdc4',borderWidth:2,pointRadius:0,tension:.3},
+  ]},options:{...chartBase('c-prod'),scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>(v/1000).toFixed(0)+'k L'},grid:{color:grd}}}}});
+
+  charts.lbar=new Chart($('c-lbar'),{type:'bar',data:{labels:[],datasets:[
+    {label:'Custo Proc. 3°',data:[],backgroundColor:'rgba(78,205,196,.75)'},
+    {label:'Custo Proc. Próprio',data:[],backgroundColor:'rgba(100,181,246,.75)'},
+  ]},options:chartBase('c-lbar')});
+
+  charts.ldelta=new Chart($('c-ldelta'),{type:'line',data:{labels:[],datasets:[
+    {label:'Delta Acumulado',data:[],fill:true,backgroundColor:'rgba(139,195,74,.1)',borderColor:'#8bc34a',borderWidth:2,pointRadius:0,tension:.3},
+    {label:'Ref. zero',data:[],borderColor:'rgba(139,105,20,.4)',borderWidth:1,borderDash:[4,2],pointRadius:0,fill:false},
+  ]},options:chartBase('c-ldelta')});
+}
+
+function upd(chart,idx,labels,data){chart.data.labels=labels;chart.data.datasets[idx].data=data;}
+
+// ─── UPDATE ALL ───────────────────────────────────────────────────────────────
+let lastM=null;
+function updateAll(){
+  const M=computeModel(P); lastM=M;
+  const {rows,beA,beB,lbe,totHaF,totInv,peakRev,peakProd,implHa,preHa,pomHa,sched,anSav,yRec,rL}=M;
+  const labs=rows.map(r=>r.cal);
+
+  // KPIs
+  set('k-area',totHaF+' ha'); set('k-area-s',sched.length+' lotes');
+  set('k-inv',fC(totInv));
+  set('k-be-a',beA?String(beA):'>20 anos'); set('k-be-as',beA?'Ano '+(beA-P.startYear+1)+' do projeto':'Fora do horizonte');
+  set('k-be-b',beB?String(beB):'>20 anos'); set('k-be-bs',beB?'Ano '+(beB-P.startYear+1)+' do projeto':'Fora do horizonte');
+  set('k-rev',fC(peakRev)); set('k-prod',(peakProd/1000).toFixed(0)+'k L/ano');
+  set('hdr-be-a',beA?String(beA):'>20 anos'); set('hdr-be-a-sub',beA?'Ano '+(beA-P.startYear+1)+' do projeto':'—');
+  set('hdr-sub','Lote inicial '+P.initialBatch+' ha · +'+P.annualIncrement+' ha/ano por '+P.incrementYears+' anos · '+totHaF+' ha total · Lagar próprio Ano '+P.lagarYear+' ('+( P.startYear+P.lagarYear-1)+')');
+  set('fl-be-a',beA?beA+' (Ano '+(beA-P.startYear+1)+')':'>20 anos');
+  set('fl-be-b',beB?beB+' (Ano '+(beB-P.startYear+1)+')':'>20 anos');
+
+  // Subtotals
+  set('sub-impl',fF(implHa)); set('sub-pre',fF(preHa)); set('sub-post',fF(pomHa));
+
+  // Inf
+  set('inf-area-total',totHaF); set('inf-nlotes',sched.length);
+  set('inf-third-l',(P.thirdRate*KG_PER_L).toFixed(0));
+  set('inf-lagar-cal',P.startYear+P.lagarYear-1);
+  set('inf-lagar-prod',rL?fC(rL.prodL)+' L / '+fC(rL.kg)+' kg azeitona':'—');
+
+  // Charts: fluxo
+  upd(charts.fluxo,0,labs,rows.map(r=>r.rev));
+  upd(charts.fluxo,1,labs,rows.map(r=>r.imp));
+  upd(charts.fluxo,2,labs,rows.map(r=>r.pre));
+  upd(charts.fluxo,3,labs,rows.map(r=>r.pom));
+  upd(charts.fluxo,4,labs,rows.map(r=>r.pA));
+  upd(charts.fluxo,5,labs,rows.map(r=>r.nA));
+  upd(charts.fluxo,6,labs,rows.map(r=>r.nB));
+  charts.fluxo.update();
+
+  // acum
+  upd(charts.acum,0,labs,rows.map(r=>r.cumA));
+  upd(charts.acum,1,labs,rows.map(r=>r.cumB));
+  upd(charts.acum,2,labs,rows.map(()=>0));
+  charts.acum.update();
+
+  // custo
+  upd(charts.custo,0,labs,rows.map(r=>r.imp));
+  upd(charts.custo,1,labs,rows.map(r=>r.pre));
+  upd(charts.custo,2,labs,rows.map(r=>r.pom));
+  upd(charts.custo,3,labs,rows.map(r=>r.pA));
+  charts.custo.update();
+
+  // area, prod
+  upd(charts.area,0,labs,rows.map(r=>r.totHa));
+  upd(charts.area,1,labs,rows.map(r=>r.prodHa));
+  charts.area.update();
+  upd(charts.prod,0,labs,rows.map(r=>r.prodL));
+  charts.prod.update();
+
+  // lagar
+  upd(charts.lbar,0,labs,rows.map(r=>r.pA));
+  upd(charts.lbar,1,labs,rows.map(r=>r.pB+r.linvB));
+  charts.lbar.update();
+  upd(charts.ldelta,0,labs,rows.map(r=>r.delta));
+  upd(charts.ldelta,1,labs,rows.map(()=>0));
+  charts.ldelta.update();
+
+  // Lagar info cards
+  $('lagar-a-info').innerHTML='Custo: R$'+P.thirdRate.toFixed(1)+'/kg azeitona<br>≡ R$'+(P.thirdRate*KG_PER_L).toFixed(0)+'/L produzido<br>Investimento: R$0<br>Custo cresce com a produção';
+  $('lagar-b-info').innerHTML='Ano: '+P.lagarYear+'° ('+( P.startYear+P.lagarYear-1)+')<br>Investimento: '+fC(P.lagarInvestment)+'<br>Fixo anual: '+fC(P.lagarFixed)+'<br>Variável: R$'+P.lagarVariable+'/L';
+
+  // BE analysis
+  const beItems=[
+    ['Investimento no lagar',fF(P.lagarInvestment),'#64b5f6'],
+    ['Economia anual estimada*',anSav>0?fF(anSav):'Lagar mais caro',anSav>0?'#8bc34a':'#ef5350'],
+    ['Anos para recuperar invest.',yRec&&yRec>0?yRec+' anos':'—','#C9A84C'],
+    ['Vantajoso a partir de',lbe?lbe+' (Ano '+(lbe-P.startYear+1)+')':'>20 anos','#4ecdc4'],
+  ];
+  $('be-grid').innerHTML=beItems.map(([l,v,c])=>`<div><div class="be-item-lbl">${l}</div><div class="be-item-val" style="color:${c}">${v}</div></div>`).join('');
+
+  // Cost cards
+  $('cost-cards').innerHTML=[
+    {t:'Implantação (custo único /ha)',c:'#4ecdc4',rows:[
+      ['Preparo solo + calagem + adubação',fF(P.implSoilPrep)],
+      ['Mudas (~357 plantas/ha)',fF(P.implSeedlings)],
+      ['Irrigação de apoio (gotejamento)',fF(P.implIrrigation)],
+      ['Infraestrutura (estradas, cercas)',fF(P.implInfra)],
+      ['Mão de obra de plantio',fF(P.implLabor)],
+      ['TOTAL /ha',fF(implHa),true],
+    ]},
+    {t:'Manutenção Pré-Produção /ha/ano (anos 1–3)',c:'#ff9f43',rows:[
+      ['Insumos (adubação, fitossanitário)',fF(P.preInputs)],
+      ['Mão de obra',fF(P.preLabor)],
+      ['TOTAL /ha/ano',fF(preHa),true],
+    ]},
+    {t:'Operação do Pomar /ha/ano (ano 4+)',c:'#C9A84C',rows:[
+      ['Insumos pós-produção',fF(P.postInputs)],
+      ['Colheita (manual/mecanizada)',fF(P.postHarvest)],
+      ['Mão de obra',fF(P.postLabor)],
+      ['TOTAL /ha/ano',fF(pomHa),true],
+    ]},
+    {t:'Processamento — Lagar',c:'#ef5350',rows:[
+      ['Terceirizado',`R$${P.thirdRate.toFixed(1)}/kg azeitona`],
+      ['  equiv. por litro',`R$${(P.thirdRate*KG_PER_L).toFixed(0)}/L produzido`],
+      ['Próprio — investimento',fF(P.lagarInvestment)],
+      ['Próprio — fixo anual',fF(P.lagarFixed)],
+      ['Próprio — variável',`R$${P.lagarVariable}/L`],
+    ]},
+  ].map(({t,c,rows})=>`<div class="card" style="border-top:2px solid ${c}"><div class="card-ttl" style="color:${c}">${t}</div>${rows.map(([l,v,b])=>`<div class="${b?'card-tot':'card-row'}"><span class="${b?'':'card-lbl'}">${l}</span><span class="card-val">${v}</span></div>`).join('')}</div>`).join('');
+
+  // Ramp cells
+  $('ramp-cells').innerHTML=PROD_RAMP.map((v,i)=>{
+    const op=v>0?v/2200:0;
+    return`<div class="ramp-cell" style="background:rgba(139,105,20,${op})">
+      <div class="ramp-yr">Ano ${i+1}</div>
+      <div class="ramp-val" style="color:${v>0?'#C9A84C':'#3a3a28'}">${v>0?v:'—'}</div>
+      ${v>0?'<div class="ramp-unit">L/ha</div>':''}
+    </div>`;
+  }).join('');
+
+  // Table
+  let pA=-1,pB=-1;
+  $('tbl-body').innerHTML=rows.map(r=>{
+    const isL=r.yr===P.lagarYear;
+    const isBeA=r.cumA>=0&&pA<0; const isBeB=r.cumB>=0&&pB<0;
+    pA=r.cumA; pB=r.cumB;
+    return`<tr class="${isL?'lagar':''}">
+      <td style="text-align:left;color:#555">${r.yr}${isL?' 🏭':''}</td>
+      <td style="color:#C9A84C;font-weight:700">${r.cal}</td>
+      <td style="color:#8bc34a">${r.newHa>0?'+'+r.newHa:''}</td>
+      <td>${r.totHa}</td>
+      <td style="color:${r.prodHa>0?'#4ecdc4':'#333'}">${r.prodHa||'—'}</td>
+      <td style="color:#ef5350">${r.imp>0?fC(r.imp):''}</td>
+      <td style="color:#ff9f43">${r.pre>0?fC(r.pre):''}</td>
+      <td style="color:#C9A84C">${r.pom>0?fC(r.pom):''}</td>
+      <td style="color:#e57373">${r.pA>0?fC(r.pA):''}</td>
+      <td style="color:#64b5f6">${(r.pB>0||r.linvB>0)?fC(r.pB+r.linvB):''}</td>
+      <td style="color:#8bc34a;font-weight:700">${r.rev>0?fC(r.rev):''}</td>
+      <td style="color:${r.nA>=0?'#8bc34a':'#ef5350'};font-weight:700">${fC(r.nA)}</td>
+      <td style="color:${r.nB>=0?'#8bc34a':'#ef5350'};font-weight:700">${fC(r.nB)}</td>
+      <td style="color:${r.cumA>=0?'#C9A84C':'#555'};font-weight:${isBeA?800:400}">${fC(r.cumA)}${isBeA?' ✓':''}</td>
+      <td style="color:${r.cumB>=0?'#C9A84C':'#555'};font-weight:${isBeB?800:400}">${fC(r.cumB)}${isBeB?' ✓':''}</td>
+    </tr>`;
+  }).join('');
+
+  // Slider display values
+  updateDisplays();
+}
+
+function updateDisplays(){
+  const fmtSv=(key,val)=>{
+    if(key==='thirdRate')return'R$'+val.toFixed(1)+'/kg';
+    if(key==='lagarVariable')return'R$'+val+'/L';
+    if(key==='priceL')return'R$'+val+'/L';
+    if(key==='lagarYear')return val+'° ano';
+    if(key==='startYear')return String(val);
+    if(['initialBatch'].includes(key))return val+' ha';
+    if(key==='annualIncrement')return val+' ha/ano';
+    if(key==='incrementYears')return val+' anos';
+    if(val>=1000)return'R$'+(val/1000).toFixed(0)+'k';
+    return'R$'+val;
+  };
+  Object.keys(P).forEach(k=>{const e=$('sv-'+k);if(e)e.textContent=fmtSv(k,P[k]);});
+}
+
+// ─── EVENTS ──────────────────────────────────────────────────────────────────
+function setupEvents(){
+  // Sliders
+  document.querySelectorAll('input[type=range]').forEach(el=>{
+    el.addEventListener('input',()=>{
+      const k=el.dataset.key, v=parseFloat(el.value);
+      P[k]=v; updateAll();
+    });
+  });
+  // Steppers
+  document.querySelectorAll('.st-btn').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const k=btn.dataset.key, dir=parseInt(btn.dataset.dir);
+      const step=parseFloat(btn.dataset.step), mn=parseFloat(btn.dataset.min), mx=parseFloat(btn.dataset.max);
+      P[k]=Math.min(mx,Math.max(mn,P[k]+dir*step));
+      updateAll();
+      // sync slider if present
+      const sl=document.querySelector('input[data-key="'+k+'"]');
+      if(sl)sl.value=P[k];
+    });
+  });
+}
+
+function toggleCfg(){
+  const p=$('cfg'), b=$('btn-cfg');
+  p.classList.toggle('open'); b.classList.toggle('on');
+  b.textContent=p.classList.contains('open')?'✕  Fechar Premissas':'⚙  Editar Premissas';
+}
+
+function toggleSec(hdr){
+  const body=hdr.nextElementSibling;
+  body.classList.toggle('open');
+  hdr.querySelector('.sec-ico').textContent=body.classList.contains('open')?'▲':'▼';
+}
+
+function showTab(id,btn){
+  document.querySelectorAll('.tc').forEach(el=>el.classList.remove('on'));
+  document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('on'));
+  $('tc-'+id).classList.add('on'); btn.classList.add('on');
+  // Resize charts after tab switch
+  Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}});
+}
+
+function resetDef(){
+  P=JSON.parse(JSON.stringify(DEF));
+  document.querySelectorAll('input[type=range]').forEach(el=>{
+    if(P[el.dataset.key]!==undefined)el.value=P[el.dataset.key];
+  });
+  updateAll();
+}
+
+function exportCSV(){
+  if(!lastM)return;
+  const {rows}=lastM;
+  const hdr='Ano,Cal,Ha+,Ha Total,Ha Prod,Implantacao,Manut Pre,Op Pomar,Proc 3,Proc Proprio,Receita,Fluxo 3,Fluxo Proprio,Acum 3,Acum Proprio';
+  const lines=rows.map(r=>[r.yr,r.cal,r.newHa,r.totHa,r.prodHa,r.imp,r.pre,r.pom,r.pA,r.pB+r.linvB,r.rev,r.nA,r.nB,r.cumA,r.cumB].join(','));
+  const blob=new Blob([hdr+'\n'+lines.join('\n')],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='olivicultura_cerro_morcego.csv'; a.click();
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{
+  initCharts();
+  setupEvents();
+  updateAll();
+});
+</script>
+</body>
+</html>
