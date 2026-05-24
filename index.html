@@ -92,9 +92,19 @@ th{padding:8px 9px;background:#121208;color:var(--g2);font-weight:600;text-align
 td{padding:5px 9px;text-align:right;border-bottom:1px solid var(--bd)}
 tr:nth-child(even) td{background:rgba(255,255,255,.012)}
 tr.lagar td{background:rgba(100,181,246,.08)}
+tr.switch-yr td{background:rgba(139,195,74,.06)}
 /* REF BOX */
 .ref-box{background:rgba(255,255,255,.02);border:1px solid var(--bd);border-left:3px solid var(--g2);border-radius:5px;padding:12px 15px;margin-top:14px;font-size:11px;color:var(--mut);line-height:1.75}
 .ref-box strong{color:var(--gold)}
+/* SCHEDULE UI */
+.sched-row{display:flex;align-items:center;gap:7px;margin-bottom:6px;background:rgba(255,255,255,.018);border-radius:4px;padding:5px 7px}
+.sched-idx{font-size:9px;color:#3a3a28;min-width:34px}
+.sched-del{background:none;border:1px solid #333;color:#555;cursor:pointer;font-size:13px;width:20px;height:20px;border-radius:3px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.sched-del:hover{border-color:#ef5350;color:#ef5350}
+.sched-add{background:rgba(139,195,74,.07);border:1px dashed rgba(139,195,74,.35);color:#8bc34a;border-radius:5px;padding:7px;width:100%;cursor:pointer;font-size:11px;margin-top:6px;transition:all .15s}
+.sched-add:hover{background:rgba(139,195,74,.18)}
+.sched-mini-ctrl{display:flex;align-items:center;gap:4px}
+.sched-mini-val{font-weight:700;font-size:12px;min-width:36px;text-align:center}
 /* FOOTER */
 .footer{background:var(--bg2);border-top:1px solid var(--bd);padding:10px 28px;font-size:10px;color:#3a3a28;text-align:center}
 </style>
@@ -134,17 +144,26 @@ tr.lagar td{background:rgba(100,181,246,.08)}
 <!-- CFG PANEL -->
 <div class="cfg" id="cfg">
 
-  <!-- PLANTIO -->
+  <!-- PLANTIO (cronograma variável) -->
   <div class="sec">
     <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #8bc34a">
       <span class="sec-ttl" style="color:#8bc34a">🌱 Escala de Plantio</span><span class="sec-ico">▼</span>
     </div>
     <div class="sec-body open">
-      <div class="st-row"><span class="st-lbl">Lote inicial (ha)</span><div class="st-ctrl"><button class="st-btn" data-key="initialBatch" data-dir="-1" data-step="1" data-min="1" data-max="200">−</button><span class="st-val" id="sv-initialBatch">10 ha</span><button class="st-btn" data-key="initialBatch" data-dir="1" data-step="1" data-min="1" data-max="200">+</button></div></div>
-      <div class="st-row"><span class="st-lbl">Incremento anual (ha/ano)</span><div class="st-ctrl"><button class="st-btn" data-key="annualIncrement" data-dir="-1" data-step="1" data-min="0" data-max="50">−</button><span class="st-val" id="sv-annualIncrement">5 ha/ano</span><button class="st-btn" data-key="annualIncrement" data-dir="1" data-step="1" data-min="0" data-max="50">+</button></div></div>
-      <div class="st-row"><span class="st-lbl">Por quantos anos</span><div class="st-ctrl"><button class="st-btn" data-key="incrementYears" data-dir="-1" data-step="1" data-min="0" data-max="30">−</button><span class="st-val" id="sv-incrementYears">9 anos</span><button class="st-btn" data-key="incrementYears" data-dir="1" data-step="1" data-min="0" data-max="30">+</button></div></div>
-      <div class="st-row"><span class="st-lbl">Ano de início</span><div class="st-ctrl"><button class="st-btn" data-key="startYear" data-dir="-1" data-step="1" data-min="2020" data-max="2035">−</button><span class="st-val" id="sv-startYear">2025</span><button class="st-btn" data-key="startYear" data-dir="1" data-step="1" data-min="2020" data-max="2035">+</button></div></div>
-      <div style="font-size:11px;color:#8bc34a;margin-top:4px">Área total: <span id="inf-area-total">55</span> ha em <span id="inf-nlotes">10</span> lotes</div>
+      <div class="st-row" style="margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--bd)">
+        <span class="st-lbl">Ano de início do projeto</span>
+        <div class="st-ctrl">
+          <button class="st-btn" data-key="startYear" data-dir="-1" data-step="1" data-min="2020" data-max="2035">−</button>
+          <span class="st-val" id="sv-startYear">2027</span>
+          <button class="st-btn" data-key="startYear" data-dir="1" data-step="1" data-min="2020" data-max="2035">+</button>
+        </div>
+      </div>
+      <div style="font-size:10px;color:#8bc34a;margin-bottom:8px">
+        Total: <span id="inf-area-total">55</span> ha &nbsp;·&nbsp; <span id="inf-nlotes">10</span> lotes
+      </div>
+      <div style="font-size:9px;color:var(--mut);letter-spacing:1px;text-transform:uppercase;margin-bottom:6px">Lotes de Plantio — Ano do Projeto → Hectares</div>
+      <div id="sched-container"></div>
+      <button class="sched-add" onclick="addSchedRow()">＋ Adicionar Lote</button>
     </div>
   </div>
 
@@ -192,7 +211,7 @@ tr.lagar td{background:rgba(100,181,246,.08)}
     </div>
   </div>
 
-  <!-- LAGAR 3° -->
+  <!-- LAGAR 3° + controle de parada -->
   <div class="sec">
     <div class="sec-hdr" onclick="toggleSec(this)" style="border-left:3px solid #ef5350">
       <span class="sec-ttl" style="color:#ef5350">🚛 Lagar Terceirizado</span><span class="sec-ico">▼</span>
@@ -203,6 +222,21 @@ tr.lagar td{background:rgba(100,181,246,.08)}
         Equivalente: R$<span id="inf-third-l">40</span>/L produzido &nbsp;·&nbsp; Faixa mercado: R$3–6/kg<br>
         Referência RS: R$3,5–4,5/kg (lagares credenciados SEAPI)
       </div>
+      <!-- NOVO: parar uso do lagar 3° -->
+      <div style="margin-top:12px;padding-top:10px;border-top:1px solid var(--bd)">
+        <div class="st-row">
+          <span class="st-lbl">Parar uso do lagar 3° (ano do projeto)</span>
+          <div class="st-ctrl">
+            <button class="st-btn" onclick="adjStopThird(-1)">−</button>
+            <span class="st-val" id="sv-stopThirdYear">8° ano</span>
+            <button class="st-btn" onclick="adjStopThird(1)">+</button>
+          </div>
+        </div>
+        <div style="font-size:10px;color:var(--mut);margin:-3px 0 0;line-height:1.65">
+          Ano calendário: <strong id="inf-stop-third-cal" style="color:var(--gold)">2034</strong>
+          &nbsp;·&nbsp; Mínimo: ano de implantação do lagar próprio
+        </div>
+      </div>
     </div>
   </div>
 
@@ -212,11 +246,15 @@ tr.lagar td{background:rgba(100,181,246,.08)}
       <span class="sec-ttl" style="color:#64b5f6">🏭 Lagar Próprio</span><span class="sec-ico">▼</span>
     </div>
     <div class="sec-body open">
-      <div class="st-row"><span class="st-lbl">Ano de implantação (do projeto)</span><div class="st-ctrl"><button class="st-btn" data-key="lagarYear" data-dir="-1" data-step="1" data-min="2" data-max="25">−</button><span class="st-val" id="sv-lagarYear">8° ano</span><button class="st-btn" data-key="lagarYear" data-dir="1" data-step="1" data-min="2" data-max="25">+</button></div></div>
-      <div style="font-size:10px;color:var(--mut);margin:-4px 0 8px">= <span id="inf-lagar-cal">2032</span> &nbsp;·&nbsp; Produção prevista: <span id="inf-lagar-prod">—</span></div>
+      <div class="st-row"><span class="st-lbl">Ano de implantação (construção do lagar)</span><div class="st-ctrl"><button class="st-btn" data-key="lagarYear" data-dir="-1" data-step="1" data-min="2" data-max="25">−</button><span class="st-val" id="sv-lagarYear">8° ano</span><button class="st-btn" data-key="lagarYear" data-dir="1" data-step="1" data-min="2" data-max="25">+</button></div></div>
+      <div style="font-size:10px;color:var(--mut);margin:-4px 0 8px">= <span id="inf-lagar-cal">2034</span> &nbsp;·&nbsp; Produção prevista: <span id="inf-lagar-prod">—</span></div>
       <div class="sl-row"><div class="sl-lbl"><span>Investimento no lagar</span><span class="sl-val" id="sv-lagarInvestment">R$450k</span></div><input type="range" data-key="lagarInvestment" min="100000" max="2000000" step="25000" value="450000"></div>
       <div class="sl-row"><div class="sl-lbl"><span>Custo fixo anual (equipe, energia, manutenção)</span><span class="sl-val" id="sv-lagarFixed">R$65k</span></div><input type="range" data-key="lagarFixed" min="20000" max="300000" step="5000" value="65000"></div>
       <div class="sl-row"><div class="sl-lbl"><span>Custo variável (embalagem, rotulagem)</span><span class="sl-val" id="sv-lagarVariable">R$5/L</span></div><input type="range" data-key="lagarVariable" min="1" max="30" step="1" value="5"></div>
+      <div style="font-size:10px;color:var(--mut);margin-top:4px;line-height:1.65;border-top:1px solid var(--bd);padding-top:7px">
+        ⚠ O investimento é pago no <strong style="color:var(--blue)">ano de construção</strong>.<br>
+        A operação própria inicia no <strong style="color:var(--green)">ano configurado em "Parar uso do lagar 3°"</strong>.
+      </div>
     </div>
   </div>
 
@@ -288,12 +326,15 @@ tr.lagar td{background:rgba(100,181,246,.08)}
       <div id="lagar-b-info" style="font-size:11px;color:#aaa;line-height:1.8"></div>
     </div>
   </div>
-  <div class="chart-box"><div class="chart-ttl">CUSTO DE PROCESSAMENTO ANUAL (R$)</div><canvas id="c-lbar"></canvas></div>
+  <div class="chart-box">
+    <div class="chart-ttl">CUSTO DE PROCESSAMENTO ANUAL (R$) — Barras azuis apenas a partir do switch para lagar próprio · Barra vermelha = investimento</div>
+    <canvas id="c-lbar"></canvas>
+  </div>
   <div class="chart-box"><div class="chart-ttl">VANTAGEM ACUMULADA DO LAGAR PRÓPRIO vs TERCEIRIZADO (positivo = próprio melhor)</div><canvas id="c-ldelta"></canvas></div>
   <div class="be-box">
     <div class="be-ttl">ANÁLISE DE BREAK-EVEN DO LAGAR PRÓPRIO</div>
     <div class="be-grid" id="be-grid"></div>
-    <div class="be-note">* Economia anual estimada no ano de implantação. Aumenta progressivamente com a expansão da produção.</div>
+    <div class="be-note">* Economia anual estimada no ano de início de operação do lagar próprio. Cresce progressivamente com a expansão da produção.</div>
   </div>
 </div>
 
@@ -316,84 +357,130 @@ tr.lagar td{background:rgba(100,181,246,.08)}
 <div class="footer">Olivicultura — Cerro do Morcego · Missões/RS &nbsp;|&nbsp; Modelo financeiro v2025 com referências Embrapa/SEAPI · Dados estimados para planejamento — consulte técnico habilitado para projeto agronômico oficial</div>
 
 <script>
-// ─── ENGINE ─────────────────────────────────────────────────────────────────
+// ─── CONSTANTES ──────────────────────────────────────────────────────────────
 const KG_PER_L = 10;
 const PROD_RAMP = [0,0,0,400,750,1050,1300,1450,1550,1600,1700];
 
+// ─── PARÂMETROS PADRÃO ───────────────────────────────────────────────────────
+// plantingSchedule: [{yr: ano_do_projeto, ha: hectares}, ...]
+// lagarYear:       ano em que o lagar é CONSTRUÍDO (paga o investimento)
+// stopThirdYear:   ano em que para de usar o 3° e começa operação própria (>= lagarYear)
 let P = {
-  startYear:2025, initialBatch:10, annualIncrement:5, incrementYears:9,
+  startYear: 2027,
+  plantingSchedule: [
+    {yr:1, ha:10},
+    {yr:2, ha:5}, {yr:3, ha:5}, {yr:4, ha:5}, {yr:5, ha:5},
+    {yr:6, ha:5}, {yr:7, ha:5}, {yr:8, ha:5}, {yr:9, ha:5}, {yr:10, ha:5}
+  ],
   implSoilPrep:5500, implSeedlings:8000, implIrrigation:7000, implInfra:4000, implLabor:2500,
   preInputs:2500, preLabor:2000,
   postInputs:4000, postHarvest:4000, postLabor:3000,
   thirdRate:4.0,
+  stopThirdYear:8,
   lagarYear:8, lagarInvestment:450000, lagarFixed:65000, lagarVariable:5,
   priceL:120
 };
 const DEF = JSON.parse(JSON.stringify(P));
 
+// ─── ENGINE ──────────────────────────────────────────────────────────────────
 function computeModel(p) {
   const implHa = p.implSoilPrep+p.implSeedlings+p.implIrrigation+p.implInfra+p.implLabor;
-  const preHa = p.preInputs+p.preLabor;
-  const pomHa = p.postInputs+p.postHarvest+p.postLabor;
-  const sched = [{yr:1,ha:p.initialBatch}];
-  if(p.annualIncrement>0) for(let i=1;i<=p.incrementYears;i++) sched.push({yr:i+1,ha:p.annualIncrement});
-  const lastYr = sched[sched.length-1].yr;
-  const TOTAL = Math.max(20,lastYr+13);
-  const rows=[];let cumA=0,cumB=0;
-  for(let yr=1;yr<=TOTAL;yr++){
-    const cal=p.startYear+yr-1;
-    const newHa=(sched.find(b=>b.yr===yr)||{ha:0}).ha;
-    const imp=newHa*implHa;
-    let pre=0,pom=0,prodL=0,prodHa=0,totHa=0;
+  const preHa  = p.preInputs+p.preLabor;
+  const pomHa  = p.postInputs+p.postHarvest+p.postLabor;
+
+  const sched = (p.plantingSchedule||[])
+    .filter(s=>s.ha>0)
+    .sort((a,b)=>a.yr-b.yr);
+
+  const lastYr = sched.length>0 ? sched[sched.length-1].yr : 1;
+  const TOTAL  = Math.max(20, lastYr+13);
+  const rows=[]; let cumA=0, cumB=0;
+
+  for(let yr=1; yr<=TOTAL; yr++){
+    const cal   = p.startYear+yr-1;
+    const newHa = sched.filter(b=>b.yr===yr).reduce((s,b)=>s+b.ha, 0);
+    const imp   = newHa*implHa;
+
+    let pre=0, pom=0, prodL=0, prodHa=0, totHa=0;
     sched.forEach(b=>{
-      if(b.yr>yr)return;
-      const age=yr-b.yr;
-      totHa+=b.ha;
-      const pr=PROD_RAMP[Math.min(age,PROD_RAMP.length-1)]||0;
-      if(pr>0){pom+=b.ha*pomHa;prodL+=b.ha*pr;prodHa+=b.ha;}
-      else pre+=b.ha*preHa;
+      if(b.yr>yr) return;
+      const age = yr-b.yr;
+      totHa += b.ha;
+      const pr = PROD_RAMP[Math.min(age,PROD_RAMP.length-1)]||0;
+      if(pr>0){ pom+=b.ha*pomHa; prodL+=b.ha*pr; prodHa+=b.ha; }
+      else      pre+=b.ha*preHa;
     });
+
     const kg=prodL*KG_PER_L, rev=prodL*p.priceL;
-    const pA=kg*p.thirdRate, tA=imp+pre+pom+pA, nA=rev-tA; cumA+=nA;
-    let linvB=0,pB=0;
-    if(yr<p.lagarYear) pB=kg*p.thirdRate;
-    else{if(yr===p.lagarYear)linvB=p.lagarInvestment;pB=prodL>0?p.lagarFixed+prodL*p.lagarVariable:0;}
-    const tB=imp+pre+pom+pB+linvB, nB=rev-tB; cumB+=nB;
-    rows.push({yr,cal,newHa,totHa,prodHa,imp:Math.round(imp),pre:Math.round(pre),pom:Math.round(pom),
+
+    // Cenário A: sempre lagar terceirizado
+    const pA=kg*p.thirdRate, tA=imp+pre+pom+pA, nA=rev-tA;
+    cumA+=nA;
+
+    // Cenário B: lagar próprio
+    // Investimento pago no ano de CONSTRUÇÃO (lagarYear)
+    let linvB=0;
+    if(yr===p.lagarYear) linvB=p.lagarInvestment;
+    // Processamento: 3° até (stopThirdYear-1), próprio a partir de stopThirdYear
+    let pB=0;
+    if(yr<p.stopThirdYear){
+      pB=kg*p.thirdRate;                                       // ainda no 3°
+    } else {
+      pB=prodL>0 ? p.lagarFixed+prodL*p.lagarVariable : 0;    // operação própria
+    }
+    const tB=imp+pre+pom+pB+linvB, nB=rev-tB;
+    cumB+=nB;
+
+    rows.push({yr,cal,newHa,totHa,prodHa,
+      imp:Math.round(imp),pre:Math.round(pre),pom:Math.round(pom),
       prodL:Math.round(prodL),kg:Math.round(kg),rev:Math.round(rev),
       pA:Math.round(pA),tA:Math.round(tA),nA:Math.round(nA),cumA:Math.round(cumA),
-      linvB:Math.round(linvB),pB:Math.round(pB),tB:Math.round(tB),nB:Math.round(nB),cumB:Math.round(cumB),
-      delta:Math.round(cumB-cumA)});
+      linvB:Math.round(linvB),pB:Math.round(pB),tB:Math.round(tB),nB:Math.round(nB),
+      cumB:Math.round(cumB),delta:Math.round(cumB-cumA)});
   }
-  const beA=rows.find(r=>r.cumA>=0)||null;
-  const beB=rows.find(r=>r.cumB>=0)||null;
-  const lbe=rows.find(r=>r.yr>=p.lagarYear&&r.delta>=0)||null;
-  const totHaF=sched.reduce((s,b)=>s+b.ha,0);
-  const totInv=sched.reduce((s,b)=>s+b.ha*implHa,0);
-  const peakRev=Math.max(...rows.map(r=>r.rev));
-  const peakProd=Math.max(...rows.map(r=>r.prodL));
-  const rL=rows.find(r=>r.yr===p.lagarYear)||null;
-  const anSav=rL?rL.pA-rL.pB:0;
-  const yRec=anSav>0?Math.ceil(p.lagarInvestment/anSav):null;
-  return{rows,beA,beB,lbe,totHaF,totInv,peakRev,peakProd,implHa,preHa,pomHa,sched,anSav,yRec,rL};
+
+  // beA/beB/lbe são OBJETOS-LINHA (não números)
+  const beA = rows.find(r=>r.cumA>=0)||null;
+  const beB = rows.find(r=>r.cumB>=0)||null;
+  const lbe = rows.find(r=>r.yr>=p.stopThirdYear&&r.delta>=0)||null;
+
+  const totHaF   = sched.reduce((s,b)=>s+b.ha, 0);
+  const totInv   = sched.reduce((s,b)=>s+b.ha*implHa, 0);
+  const peakRev  = Math.max(...rows.map(r=>r.rev), 0);
+  const peakProd = Math.max(...rows.map(r=>r.prodL), 0);
+
+  const rL      = rows.find(r=>r.yr===p.lagarYear)||null;
+  const rSwitch = rows.find(r=>r.yr===p.stopThirdYear)||null;
+  const anSav   = rSwitch ? rSwitch.pA-rSwitch.pB : 0;
+  const yRec    = anSav>0 ? Math.ceil(p.lagarInvestment/anSav) : null;
+
+  return{rows,beA,beB,lbe,totHaF,totInv,peakRev,peakProd,
+         implHa,preHa,pomHa,sched,anSav,yRec,rL,rSwitch};
 }
 
 // ─── FORMATTERS ──────────────────────────────────────────────────────────────
-const fC=v=>{if(v===null||v===undefined)return'—';const a=Math.abs(v);if(a>=1e6)return'R$'+(v/1e6).toFixed(1)+'M';if(a>=1e3)return'R$'+(v/1e3).toFixed(0)+'k';return'R$'+Math.round(v);};
+const fC=v=>{
+  if(v===null||v===undefined)return'—';
+  const a=Math.abs(v);
+  if(a>=1e6)return'R$'+(v/1e6).toFixed(1)+'M';
+  if(a>=1e3)return'R$'+(v/1e3).toFixed(0)+'k';
+  return'R$'+Math.round(v);
+};
 const fF=v=>new Intl.NumberFormat('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}).format(v);
-const $=(id)=>document.getElementById(id);
+const $=id=>document.getElementById(id);
 const set=(id,v)=>{const e=$(id);if(e)e.textContent=v;};
 
 // ─── CHARTS ──────────────────────────────────────────────────────────────────
 const charts={};
 const grd='#272714';
-const chartBase=(id)=>({responsive:true,maintainAspectRatio:true,aspectRatio:3,plugins:{
-  legend:{labels:{color:'#7a7a5a',font:{size:10},boxWidth:11,padding:10}},
-  tooltip:{backgroundColor:'#171710',borderColor:'#8B6914',borderWidth:1,
-    titleColor:'#C9A84C',bodyColor:'#ddd5bb',padding:8,
-    callbacks:{label:c=>` ${c.dataset.label}: ${fC(c.raw)}`}}},
+const chartBase=()=>({responsive:true,maintainAspectRatio:true,aspectRatio:3,
+  plugins:{
+    legend:{labels:{color:'#7a7a5a',font:{size:10},boxWidth:11,padding:10}},
+    tooltip:{backgroundColor:'#171710',borderColor:'#8B6914',borderWidth:1,
+      titleColor:'#C9A84C',bodyColor:'#ddd5bb',padding:8,
+      callbacks:{label:c=>` ${c.dataset.label}: ${fC(c.raw)}`}}},
   scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},
-           y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>fC(v)},grid:{color:grd}}}});
+          y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>fC(v)},grid:{color:grd}}}});
 
 function initCharts(){
   Chart.defaults.color='#7a7a5a';
@@ -406,39 +493,41 @@ function initCharts(){
     {label:'Proc.3°',data:[],backgroundColor:'rgba(239,83,80,.7)',stack:'c',order:2},
     {type:'line',label:'Fluxo 3°',data:[],borderColor:'#4ecdc4',borderWidth:2,pointRadius:0,tension:.3,fill:false,order:1},
     {type:'line',label:'Fluxo Próprio',data:[],borderColor:'#64b5f6',borderWidth:2,pointRadius:0,tension:.3,borderDash:[5,3],fill:false,order:1},
-  ]},options:chartBase('c-fluxo')});
+  ]},options:chartBase()});
 
   charts.acum=new Chart($('c-acum'),{type:'line',data:{labels:[],datasets:[
     {label:'Acum. Lagar 3°',data:[],borderColor:'#4ecdc4',borderWidth:2.5,pointRadius:0,tension:.3,fill:false},
     {label:'Acum. Lagar Próprio',data:[],borderColor:'#64b5f6',borderWidth:2.5,pointRadius:0,tension:.3,borderDash:[5,3],fill:false},
     {label:'Break-even',data:[],borderColor:'rgba(139,105,20,.5)',borderWidth:1,borderDash:[4,2],pointRadius:0,fill:false},
-  ]},options:chartBase('c-acum')});
+  ]},options:chartBase()});
 
   charts.custo=new Chart($('c-custo'),{type:'bar',data:{labels:[],datasets:[
     {label:'Implantação',data:[],backgroundColor:'rgba(74,46,30,.9)'},
     {label:'Manutenção Pré',data:[],backgroundColor:'rgba(255,159,67,.8)'},
     {label:'Operação Pomar',data:[],backgroundColor:'rgba(139,105,20,.8)'},
     {label:'Processamento 3°',data:[],backgroundColor:'rgba(239,83,80,.75)'},
-  ]},options:{...chartBase('c-custo'),scales:{x:{stacked:true,ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{stacked:true,ticks:{color:'#4a4a30',font:{size:10},callback:v=>fC(v)},grid:{color:grd}}}}});
+  ]},options:{...chartBase(),scales:{x:{stacked:true,ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{stacked:true,ticks:{color:'#4a4a30',font:{size:10},callback:v=>fC(v)},grid:{color:grd}}}}});
 
   charts.area=new Chart($('c-area'),{type:'line',data:{labels:[],datasets:[
     {label:'Total Plantada',data:[],fill:true,backgroundColor:'rgba(42,42,20,.8)',borderColor:'#3a3a20',borderWidth:1,pointRadius:0},
     {label:'Em Produção',data:[],fill:true,backgroundColor:'rgba(139,105,20,.45)',borderColor:'#C9A84C',borderWidth:2,pointRadius:0},
-  ]},options:{...chartBase('c-area'),scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>v+' ha'},grid:{color:grd}}}}});
+  ]},options:{...chartBase(),scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>v+' ha'},grid:{color:grd}}}}});
 
   charts.prod=new Chart($('c-prod'),{type:'line',data:{labels:[],datasets:[
     {label:'Litros de Azeite',data:[],fill:true,backgroundColor:'rgba(78,205,196,.1)',borderColor:'#4ecdc4',borderWidth:2,pointRadius:0,tension:.3},
-  ]},options:{...chartBase('c-prod'),scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>(v/1000).toFixed(0)+'k L'},grid:{color:grd}}}}});
+  ]},options:{...chartBase(),scales:{x:{ticks:{color:'#4a4a30',font:{size:10}},grid:{color:grd}},y:{ticks:{color:'#4a4a30',font:{size:10},callback:v=>(v/1000).toFixed(0)+'k L'},grid:{color:grd}}}}});
 
+  // lbar: 3 datasets separados e corretos
   charts.lbar=new Chart($('c-lbar'),{type:'bar',data:{labels:[],datasets:[
-    {label:'Custo Proc. 3°',data:[],backgroundColor:'rgba(78,205,196,.75)'},
-    {label:'Custo Proc. Próprio',data:[],backgroundColor:'rgba(100,181,246,.75)'},
-  ]},options:chartBase('c-lbar')});
+    {label:'Proc. 3° — Cenário A (sempre)',         data:[],backgroundColor:'rgba(78,205,196,.75)'},
+    {label:'Op. Lagar Próprio — Cenário B (switch)', data:[],backgroundColor:'rgba(100,181,246,.75)'},
+    {label:'Investimento Lagar (construção)',         data:[],backgroundColor:'rgba(239,83,80,.65)'},
+  ]},options:chartBase()});
 
   charts.ldelta=new Chart($('c-ldelta'),{type:'line',data:{labels:[],datasets:[
-    {label:'Delta Acumulado',data:[],fill:true,backgroundColor:'rgba(139,195,74,.1)',borderColor:'#8bc34a',borderWidth:2,pointRadius:0,tension:.3},
+    {label:'Delta Acumulado (B−A)',data:[],fill:true,backgroundColor:'rgba(139,195,74,.1)',borderColor:'#8bc34a',borderWidth:2,pointRadius:0,tension:.3},
     {label:'Ref. zero',data:[],borderColor:'rgba(139,105,20,.4)',borderWidth:1,borderDash:[4,2],pointRadius:0,fill:false},
-  ]},options:chartBase('c-ldelta')});
+  ]},options:chartBase()});
 }
 
 function upd(chart,idx,labels,data){chart.data.labels=labels;chart.data.datasets[idx].data=data;}
@@ -447,30 +536,48 @@ function upd(chart,idx,labels,data){chart.data.labels=labels;chart.data.datasets
 let lastM=null;
 function updateAll(){
   const M=computeModel(P); lastM=M;
-  const {rows,beA,beB,lbe,totHaF,totInv,peakRev,peakProd,implHa,preHa,pomHa,sched,anSav,yRec,rL}=M;
+  const{rows,beA,beB,lbe,totHaF,totInv,peakRev,peakProd,
+        implHa,preHa,pomHa,sched,anSav,yRec,rL,rSwitch}=M;
   const labs=rows.map(r=>r.cal);
 
-  // KPIs
-  set('k-area',totHaF+' ha'); set('k-area-s',sched.length+' lotes');
-  set('k-inv',fC(totInv));
-  set('k-be-a',beA?String(beA):'>20 anos'); set('k-be-as',beA?'Ano '+(beA-P.startYear+1)+' do projeto':'Fora do horizonte');
-  set('k-be-b',beB?String(beB):'>20 anos'); set('k-be-bs',beB?'Ano '+(beB-P.startYear+1)+' do projeto':'Fora do horizonte');
-  set('k-rev',fC(peakRev)); set('k-prod',(peakProd/1000).toFixed(0)+'k L/ano');
-  set('hdr-be-a',beA?String(beA):'>20 anos'); set('hdr-be-a-sub',beA?'Ano '+(beA-P.startYear+1)+' do projeto':'—');
-  set('hdr-sub','Lote inicial '+P.initialBatch+' ha · +'+P.annualIncrement+' ha/ano por '+P.incrementYears+' anos · '+totHaF+' ha total · Lagar próprio Ano '+P.lagarYear+' ('+( P.startYear+P.lagarYear-1)+')');
-  set('fl-be-a',beA?beA+' (Ano '+(beA-P.startYear+1)+')':'>20 anos');
-  set('fl-be-b',beB?beB+' (Ano '+(beB-P.startYear+1)+')':'>20 anos');
+  // ── KPIs — PAYBACK CORRIGIDO (beA/beB são objetos {yr, cal, ...}) ─────────
+  set('k-area',   totHaF+' ha');
+  set('k-area-s', sched.length+' lotes');
+  set('k-inv',    fC(totInv));
+  set('k-be-a',   beA ? String(beA.cal) : '>20 anos');
+  set('k-be-as',  beA ? 'Ano '+beA.yr+' do projeto' : 'Fora do horizonte');
+  set('k-be-b',   beB ? String(beB.cal) : '>20 anos');
+  set('k-be-bs',  beB ? 'Ano '+beB.yr+' do projeto' : 'Fora do horizonte');
+  set('k-rev',    fC(peakRev));
+  set('k-prod',   (peakProd/1000).toFixed(0)+'k L/ano');
 
-  // Subtotals
-  set('sub-impl',fF(implHa)); set('sub-pre',fF(preHa)); set('sub-post',fF(pomHa));
+  set('hdr-be-a',     beA ? String(beA.cal)          : '>20 anos');
+  set('hdr-be-a-sub', beA ? 'Ano '+beA.yr+' do projeto' : '—');
 
-  // Inf
-  set('inf-area-total',totHaF); set('inf-nlotes',sched.length);
-  set('inf-third-l',(P.thirdRate*KG_PER_L).toFixed(0));
-  set('inf-lagar-cal',P.startYear+P.lagarYear-1);
-  set('inf-lagar-prod',rL?fC(rL.prodL)+' L / '+fC(rL.kg)+' kg azeitona':'—');
+  set('hdr-sub',
+    'Início '+P.startYear+' · '+totHaF+' ha em '+sched.length+' lotes'+
+    ' · Lagar construído Ano '+P.lagarYear+' ('+(P.startYear+P.lagarYear-1)+')'+
+    ' · Switch Ano '+P.stopThirdYear+' ('+(P.startYear+P.stopThirdYear-1)+')'
+  );
 
-  // Charts: fluxo
+  set('fl-be-a', beA ? beA.cal+' (Ano '+beA.yr+')' : '>20 anos');
+  set('fl-be-b', beB ? beB.cal+' (Ano '+beB.yr+')' : '>20 anos');
+
+  // ── Subtotals ─────────────────────────────────────────────────────────────
+  set('sub-impl', fF(implHa));
+  set('sub-pre',  fF(preHa));
+  set('sub-post', fF(pomHa));
+
+  // ── Info dinâmico ─────────────────────────────────────────────────────────
+  set('inf-area-total',   totHaF);
+  set('inf-nlotes',       sched.length);
+  set('inf-third-l',      (P.thirdRate*KG_PER_L).toFixed(0));
+  set('inf-lagar-cal',    P.startYear+P.lagarYear-1);
+  set('inf-lagar-prod',   rL ? fC(rL.prodL)+' L / '+fC(rL.kg)+' kg azeitona' : '—');
+  set('sv-stopThirdYear', P.stopThirdYear+'° ano');
+  set('inf-stop-third-cal', P.startYear+P.stopThirdYear-1);
+
+  // ── Charts: fluxo ────────────────────────────────────────────────────────
   upd(charts.fluxo,0,labs,rows.map(r=>r.rev));
   upd(charts.fluxo,1,labs,rows.map(r=>r.imp));
   upd(charts.fluxo,2,labs,rows.map(r=>r.pre));
@@ -480,48 +587,62 @@ function updateAll(){
   upd(charts.fluxo,6,labs,rows.map(r=>r.nB));
   charts.fluxo.update();
 
-  // acum
   upd(charts.acum,0,labs,rows.map(r=>r.cumA));
   upd(charts.acum,1,labs,rows.map(r=>r.cumB));
   upd(charts.acum,2,labs,rows.map(()=>0));
   charts.acum.update();
 
-  // custo
   upd(charts.custo,0,labs,rows.map(r=>r.imp));
   upd(charts.custo,1,labs,rows.map(r=>r.pre));
   upd(charts.custo,2,labs,rows.map(r=>r.pom));
   upd(charts.custo,3,labs,rows.map(r=>r.pA));
   charts.custo.update();
 
-  // area, prod
   upd(charts.area,0,labs,rows.map(r=>r.totHa));
   upd(charts.area,1,labs,rows.map(r=>r.prodHa));
   charts.area.update();
   upd(charts.prod,0,labs,rows.map(r=>r.prodL));
   charts.prod.update();
 
-  // lagar
+  // ── lbar CORRIGIDO: 3 datasets claros ─────────────────────────────────────
+  // Dataset 0: custo 3° para TODOS os anos (cenário A de referência)
   upd(charts.lbar,0,labs,rows.map(r=>r.pA));
-  upd(charts.lbar,1,labs,rows.map(r=>r.pB+r.linvB));
+  // Dataset 1: operação PRÓPRIA — null antes do switch, pB a partir do switch
+  upd(charts.lbar,1,labs,rows.map(r=>r.yr>=P.stopThirdYear ? r.pB : null));
+  // Dataset 2: investimento — só no ano de construção do lagar
+  upd(charts.lbar,2,labs,rows.map(r=>r.linvB>0 ? r.linvB : null));
   charts.lbar.update();
+
   upd(charts.ldelta,0,labs,rows.map(r=>r.delta));
   upd(charts.ldelta,1,labs,rows.map(()=>0));
   charts.ldelta.update();
 
-  // Lagar info cards
-  $('lagar-a-info').innerHTML='Custo: R$'+P.thirdRate.toFixed(1)+'/kg azeitona<br>≡ R$'+(P.thirdRate*KG_PER_L).toFixed(0)+'/L produzido<br>Investimento: R$0<br>Custo cresce com a produção';
-  $('lagar-b-info').innerHTML='Ano: '+P.lagarYear+'° ('+( P.startYear+P.lagarYear-1)+')<br>Investimento: '+fC(P.lagarInvestment)+'<br>Fixo anual: '+fC(P.lagarFixed)+'<br>Variável: R$'+P.lagarVariable+'/L';
+  // ── Lagar info cards ─────────────────────────────────────────────────────
+  $('lagar-a-info').innerHTML=
+    'Custo: R$'+P.thirdRate.toFixed(1)+'/kg azeitona<br>'+
+    '≡ R$'+(P.thirdRate*KG_PER_L).toFixed(0)+'/L produzido<br>'+
+    'Vigência: até Ano '+P.stopThirdYear+' ('+(P.startYear+P.stopThirdYear-1)+')<br>'+
+    'Investimento: R$0';
 
-  // BE analysis
+  $('lagar-b-info').innerHTML=
+    'Construção: Ano '+P.lagarYear+' ('+(P.startYear+P.lagarYear-1)+')<br>'+
+    'Operação inicia: Ano '+P.stopThirdYear+' ('+(P.startYear+P.stopThirdYear-1)+')<br>'+
+    'Investimento: '+fC(P.lagarInvestment)+'<br>'+
+    'Fixo anual: '+fC(P.lagarFixed)+'<br>'+
+    'Variável: R$'+P.lagarVariable+'/L';
+
+  // ── BE analysis — lbe é objeto-linha ─────────────────────────────────────
   const beItems=[
-    ['Investimento no lagar',fF(P.lagarInvestment),'#64b5f6'],
-    ['Economia anual estimada*',anSav>0?fF(anSav):'Lagar mais caro',anSav>0?'#8bc34a':'#ef5350'],
-    ['Anos para recuperar invest.',yRec&&yRec>0?yRec+' anos':'—','#C9A84C'],
-    ['Vantajoso a partir de',lbe?lbe+' (Ano '+(lbe-P.startYear+1)+')':'>20 anos','#4ecdc4'],
+    ['Investimento no lagar',      fF(P.lagarInvestment),                             '#64b5f6'],
+    ['Economia anual estimada*',   anSav>0?fF(anSav):'Lagar mais caro',              anSav>0?'#8bc34a':'#ef5350'],
+    ['Anos para recuperar invest.',yRec&&yRec>0?yRec+' anos':'—',                    '#C9A84C'],
+    ['Vantajoso a partir de',      lbe?lbe.cal+' (Ano '+lbe.yr+')':'>20 anos',       '#4ecdc4'],
   ];
-  $('be-grid').innerHTML=beItems.map(([l,v,c])=>`<div><div class="be-item-lbl">${l}</div><div class="be-item-val" style="color:${c}">${v}</div></div>`).join('');
+  $('be-grid').innerHTML=beItems.map(([l,v,c])=>
+    `<div><div class="be-item-lbl">${l}</div><div class="be-item-val" style="color:${c}">${v}</div></div>`
+  ).join('');
 
-  // Cost cards
+  // ── Cost cards ────────────────────────────────────────────────────────────
   $('cost-cards').innerHTML=[
     {t:'Implantação (custo único /ha)',c:'#4ecdc4',rows:[
       ['Preparo solo + calagem + adubação',fF(P.implSoilPrep)],
@@ -549,9 +670,14 @@ function updateAll(){
       ['Próprio — fixo anual',fF(P.lagarFixed)],
       ['Próprio — variável',`R$${P.lagarVariable}/L`],
     ]},
-  ].map(({t,c,rows})=>`<div class="card" style="border-top:2px solid ${c}"><div class="card-ttl" style="color:${c}">${t}</div>${rows.map(([l,v,b])=>`<div class="${b?'card-tot':'card-row'}"><span class="${b?'':'card-lbl'}">${l}</span><span class="card-val">${v}</span></div>`).join('')}</div>`).join('');
+  ].map(({t,c,rows})=>
+    `<div class="card" style="border-top:2px solid ${c}">
+      <div class="card-ttl" style="color:${c}">${t}</div>
+      ${rows.map(([l,v,b])=>`<div class="${b?'card-tot':'card-row'}"><span class="${b?'':'card-lbl'}">${l}</span><span class="card-val">${v}</span></div>`).join('')}
+    </div>`
+  ).join('');
 
-  // Ramp cells
+  // ── Ramp cells ────────────────────────────────────────────────────────────
   $('ramp-cells').innerHTML=PROD_RAMP.map((v,i)=>{
     const op=v>0?v/2200:0;
     return`<div class="ramp-cell" style="background:rgba(139,105,20,${op})">
@@ -561,14 +687,17 @@ function updateAll(){
     </div>`;
   }).join('');
 
-  // Table
-  let pA=-1,pB=-1;
+  // ── Tabela completa ───────────────────────────────────────────────────────
+  let pA_prev=-1, pB_prev=-1;
   $('tbl-body').innerHTML=rows.map(r=>{
-    const isL=r.yr===P.lagarYear;
-    const isBeA=r.cumA>=0&&pA<0; const isBeB=r.cumB>=0&&pB<0;
-    pA=r.cumA; pB=r.cumB;
-    return`<tr class="${isL?'lagar':''}">
-      <td style="text-align:left;color:#555">${r.yr}${isL?' 🏭':''}</td>
+    const isL      = r.yr===P.lagarYear;
+    const isSwitch = r.yr===P.stopThirdYear && P.stopThirdYear!==P.lagarYear;
+    const isBeA    = r.cumA>=0&&pA_prev<0;
+    const isBeB    = r.cumB>=0&&pB_prev<0;
+    pA_prev=r.cumA; pB_prev=r.cumB;
+    const rowCls   = isL?'lagar':(isSwitch?'switch-yr':'');
+    return`<tr class="${rowCls}">
+      <td style="text-align:left;color:#555">${r.yr}${isL?' 🏭':''}${isSwitch?' 🔄':''}</td>
       <td style="color:#C9A84C;font-weight:700">${r.cal}</td>
       <td style="color:#8bc34a">${r.newHa>0?'+'+r.newHa:''}</td>
       <td>${r.totHa}</td>
@@ -586,51 +715,104 @@ function updateAll(){
     </tr>`;
   }).join('');
 
-  // Slider display values
   updateDisplays();
+  renderSchedUI();
 }
 
+// ─── DISPLAY VALUES ──────────────────────────────────────────────────────────
 function updateDisplays(){
   const fmtSv=(key,val)=>{
-    if(key==='thirdRate')return'R$'+val.toFixed(1)+'/kg';
+    if(key==='thirdRate')    return'R$'+val.toFixed(1)+'/kg';
     if(key==='lagarVariable')return'R$'+val+'/L';
-    if(key==='priceL')return'R$'+val+'/L';
-    if(key==='lagarYear')return val+'° ano';
-    if(key==='startYear')return String(val);
-    if(['initialBatch'].includes(key))return val+' ha';
-    if(key==='annualIncrement')return val+' ha/ano';
-    if(key==='incrementYears')return val+' anos';
-    if(val>=1000)return'R$'+(val/1000).toFixed(0)+'k';
+    if(key==='priceL')       return'R$'+val+'/L';
+    if(key==='lagarYear')    return val+'° ano';
+    if(key==='startYear')    return String(val);
+    if(val>=1000)            return'R$'+(val/1000).toFixed(0)+'k';
     return'R$'+val;
   };
-  Object.keys(P).forEach(k=>{const e=$('sv-'+k);if(e)e.textContent=fmtSv(k,P[k]);});
+  ['startYear','implSoilPrep','implSeedlings','implIrrigation','implInfra','implLabor',
+   'preInputs','preLabor','postInputs','postHarvest','postLabor',
+   'thirdRate','lagarYear','lagarInvestment','lagarFixed','lagarVariable','priceL']
+  .forEach(k=>{ const e=$('sv-'+k); if(e) e.textContent=fmtSv(k,P[k]); });
 }
 
-// ─── EVENTS ──────────────────────────────────────────────────────────────────
+// ─── SCHEDULE UI ─────────────────────────────────────────────────────────────
+function renderSchedUI(){
+  const c=$('sched-container');
+  if(!c) return;
+  c.innerHTML=P.plantingSchedule.map((s,i)=>`
+    <div class="sched-row">
+      <span class="sched-idx">Lote ${i+1}</span>
+      <div class="sched-mini-ctrl">
+        <span style="font-size:10px;color:#555">Ano</span>
+        <button class="st-btn" style="width:20px;height:20px;font-size:12px" onclick="adjSched(${i},'yr',-1)">−</button>
+        <span class="sched-mini-val" style="color:var(--gold);min-width:24px">${s.yr}</span>
+        <button class="st-btn" style="width:20px;height:20px;font-size:12px" onclick="adjSched(${i},'yr',1)">+</button>
+      </div>
+      <div class="sched-mini-ctrl">
+        <span style="font-size:10px;color:#555">ha</span>
+        <button class="st-btn" style="width:20px;height:20px;font-size:12px" onclick="adjSched(${i},'ha',-5)">−−</button>
+        <button class="st-btn" style="width:20px;height:20px;font-size:12px" onclick="adjSched(${i},'ha',-1)">−</button>
+        <span class="sched-mini-val" style="color:#8bc34a;min-width:36px">${s.ha} ha</span>
+        <button class="st-btn" style="width:20px;height:20px;font-size:12px" onclick="adjSched(${i},'ha',1)">+</button>
+        <button class="st-btn" style="width:20px;height:20px;font-size:12px" onclick="adjSched(${i},'ha',5)">++</button>
+      </div>
+      ${P.plantingSchedule.length>1
+        ?`<button class="sched-del" onclick="removeSched(${i})" title="Remover lote">×</button>`
+        :'<span style="width:20px"></span>'}
+    </div>
+  `).join('');
+}
+
+function adjSched(idx,key,dir){
+  const s=P.plantingSchedule[idx];
+  if(key==='yr') s.yr=Math.min(50,Math.max(1,s.yr+dir));
+  if(key==='ha') s.ha=Math.min(500,Math.max(1,s.ha+dir));
+  updateAll();
+}
+
+function addSchedRow(){
+  const maxYr=P.plantingSchedule.length>0
+    ?Math.max(...P.plantingSchedule.map(s=>s.yr)):0;
+  P.plantingSchedule.push({yr:maxYr+1,ha:5});
+  updateAll();
+}
+
+function removeSched(idx){
+  if(P.plantingSchedule.length<=1) return;
+  P.plantingSchedule.splice(idx,1);
+  updateAll();
+}
+
+function adjStopThird(dir){
+  P.stopThirdYear=Math.min(30,Math.max(P.lagarYear,P.stopThirdYear+dir));
+  updateAll();
+}
+
+// ─── EVENTOS ─────────────────────────────────────────────────────────────────
 function setupEvents(){
-  // Sliders
   document.querySelectorAll('input[type=range]').forEach(el=>{
     el.addEventListener('input',()=>{
-      const k=el.dataset.key, v=parseFloat(el.value);
+      const k=el.dataset.key,v=parseFloat(el.value);
       P[k]=v; updateAll();
     });
   });
-  // Steppers
-  document.querySelectorAll('.st-btn').forEach(btn=>{
+  document.querySelectorAll('.st-btn[data-key]').forEach(btn=>{
     btn.addEventListener('click',()=>{
-      const k=btn.dataset.key, dir=parseInt(btn.dataset.dir);
-      const step=parseFloat(btn.dataset.step), mn=parseFloat(btn.dataset.min), mx=parseFloat(btn.dataset.max);
+      const k=btn.dataset.key,dir=parseInt(btn.dataset.dir);
+      const step=parseFloat(btn.dataset.step),mn=parseFloat(btn.dataset.min),mx=parseFloat(btn.dataset.max);
       P[k]=Math.min(mx,Math.max(mn,P[k]+dir*step));
+      // Restrição: stopThirdYear >= lagarYear
+      if(k==='lagarYear'&&P.stopThirdYear<P.lagarYear) P.stopThirdYear=P.lagarYear;
       updateAll();
-      // sync slider if present
       const sl=document.querySelector('input[data-key="'+k+'"]');
-      if(sl)sl.value=P[k];
+      if(sl) sl.value=P[k];
     });
   });
 }
 
 function toggleCfg(){
-  const p=$('cfg'), b=$('btn-cfg');
+  const p=$('cfg'),b=$('btn-cfg');
   p.classList.toggle('open'); b.classList.toggle('on');
   b.textContent=p.classList.contains('open')?'✕  Fechar Premissas':'⚙  Editar Premissas';
 }
@@ -645,22 +827,21 @@ function showTab(id,btn){
   document.querySelectorAll('.tc').forEach(el=>el.classList.remove('on'));
   document.querySelectorAll('.tab-btn').forEach(el=>el.classList.remove('on'));
   $('tc-'+id).classList.add('on'); btn.classList.add('on');
-  // Resize charts after tab switch
   Object.values(charts).forEach(c=>{try{c.resize();}catch(e){}});
 }
 
 function resetDef(){
   P=JSON.parse(JSON.stringify(DEF));
   document.querySelectorAll('input[type=range]').forEach(el=>{
-    if(P[el.dataset.key]!==undefined)el.value=P[el.dataset.key];
+    if(P[el.dataset.key]!==undefined) el.value=P[el.dataset.key];
   });
   updateAll();
 }
 
 function exportCSV(){
-  if(!lastM)return;
-  const {rows}=lastM;
-  const hdr='Ano,Cal,Ha+,Ha Total,Ha Prod,Implantacao,Manut Pre,Op Pomar,Proc 3,Proc Proprio,Receita,Fluxo 3,Fluxo Proprio,Acum 3,Acum Proprio';
+  if(!lastM) return;
+  const{rows}=lastM;
+  const hdr='Ano,Cal,Ha+,Ha Total,Ha Prod,Implantacao,Manut Pre,Op Pomar,Proc 3,Proc Proprio+Inv,Receita,Fluxo 3,Fluxo Proprio,Acum 3,Acum Proprio';
   const lines=rows.map(r=>[r.yr,r.cal,r.newHa,r.totHa,r.prodHa,r.imp,r.pre,r.pom,r.pA,r.pB+r.linvB,r.rev,r.nA,r.nB,r.cumA,r.cumB].join(','));
   const blob=new Blob([hdr+'\n'+lines.join('\n')],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
@@ -671,6 +852,7 @@ function exportCSV(){
 document.addEventListener('DOMContentLoaded',()=>{
   initCharts();
   setupEvents();
+  renderSchedUI();
   updateAll();
 });
 </script>
